@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Image Annotation Web App</title>
+    <style>
+        body, html {
+            font-family: 'Nunito', sans-serif; /* A more rounded, friendly font */
+            background: linear-gradient(to right, #6a11cb 0%, #2575fc 100%);
+            color: #333;
+        }
+
+        header, footer {
+            background-color: #fff; /* Light background to contrast with the header/footer */
+            color: #6a11cb; /* Dark blue to match the gradient */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button {
+            transition: background-color 0.3s, transform 0.2s; /* Smoother transition for button press */
+        }
+
+        button:hover {
+            transform: translateY(-2px); /* Subtle lift effect */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        body, html {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        #drop-area {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            background-color: #fff;
+            margin: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #drop-area.drag-over {
+            background-color: #f0f0f0;
+        }
+        #image-preview div {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            position: relative;
+        }
+        #image-preview img {
+            width: 100%;
+            height: auto;
+        }
+        select {
+            padding: 10px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        #search-results {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around; /* Ensures even spacing around items */
+            align-items: center; /* Aligns items vertically */
+            padding: 20px; /* Increased padding for the container */
+        }
+
+        #search-results img {
+            width: 300%;        /* Makes image width responsive to the container size, adjust if needed */
+            max-width: 600px;   /* Increase the maximum width to 300px for larger display */
+            height: auto;       /* Keeps the aspect ratio intact */
+            margin: 20px;       /* Increase margin for better spacing */
+            border-radius: 10px; /* Optional: Rounded corners for aesthetics */
+            box-shadow: 0 8px 10px rgba(0,0,0,0.2); /* Slightly larger shadow for more depth */
+            transition: transform 0.2s;
+        }
+
+        #search-results img:hover {
+            transform: scale(2.05); /* Slightly enlarge images on hover */
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        /* Enlarged image style */
+        .enlarged-img {
+            max-width: 80%;  /* Adjusts to screen size, maintaining margin */
+            max-height: 80%;
+            border-radius: 10px;
+        }
+
+
+        #drop-area {
+            border: 2px dashed rgba(255, 255, 255, 0.6);
+            background-color: rgba(255, 255, 255, 0.2); /* Slightly see-through */
+            color: #fff;
+        }
+
+        #drop-area.drag-over {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        #image-preview div {
+            background-color: #fff;
+            border-radius: 8px;
+            margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+
+        @media only screen and (max-width: 600px) {
+            #search-section, #image-upload {
+                margin: 10px;
+            }
+
+            #search-results img {
+                max-width: 100%;
+                margin: 10px;
+            }
+        }
+
+
+        /* Neumorphic design on inputs and buttons */
+        input[type="text"], select, button {
+            background: #f4f4f4;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: 8px 8px 15px #d1d1d1,
+                        -8px -8px 15px #ffffff;
+        }
+
+        input[type="text"]:focus, select:focus {
+            outline: none;
+            box-shadow: inset 8px 8px 15px #d1d1d1,
+                        inset -8px -8px 15px #ffffff;
+        }
+
+        button {
+            font-weight: bold;
+            color: #6a11cb;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        button:hover {
+            background: #e8e8e8;
+            box-shadow: none;
+        }
+
+
+        /* Rotating animation for loading spinner */
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: rotate 1s linear infinite;
+        }
+
+        /* Subtle fadeIn effect for image load */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        #search-results img {
+            animation: fadeIn 1s ease-in;
+        }
+
+
+        #search-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+
+        body {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Pulsing effect on drop area */
+        #drop-area:hover {
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+            }
+            to {
+                box-shadow: 0 0 0 20px rgba(255, 255, 255, 0);
+            }
+        }
+
+
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Image Annotation Web App</h1>
+    </header>
+
+    <main>
+        <section id="search-section">
+            <input type="text" id="searchBox" placeholder="Enter class name to search">
+            <button onclick="searchImages()">Search</button>
+            <div id="search-results"></div>
+        </section>
+
+        <section id="image-upload">
+            <div id="drop-area">
+                <p>Drag & Drop Images Here or Click to Upload</p>
+                <input type="file" id="fileElem" multiple accept="image/*" onchange="handleFiles(this.files)" style="display:none;">
+            </div>
+            <div id="image-preview"></div>
+        </section>
+    </main>
+
+    <footer>
+        <!-- <p>&copy; 2024 Image Annotation Web App</p> -->
+    </footer>
+
+    <script>
+
+        let totalImages = 0;
+        let annotatedImages = 0;
+
+        function appendImage(src) {
+            const imgElement = document.createElement('img');
+            imgElement.src = src;
+            imgElement.alt = "Annotated Image";
+            document.getElementById('search-results').appendChild(imgElement);
+        }
+
+        function searchImages() {
+            const className = document.getElementById('searchBox').value;
+            fetch(`/api/images/search/?class_name=${className}`)
+            .then(response => response.json())
+            .then(data => {
+                const resultsContainer = document.getElementById('search-results');
+                resultsContainer.innerHTML = ''; // Clear previous results
+                if (data.results && data.results.length > 0) {
+                    data.results.forEach(imgData => {
+                        const imgElement = document.createElement('img');
+                        imgElement.src = `/media/${imgData.image}`; // Ensure this path is correct
+                        imgElement.alt = 'Annotated Image';
+                        imgElement.style.width = '100px'; // Set image size
+                        resultsContainer.appendChild(imgElement);
+                    });
+                } else {
+                    resultsContainer.innerHTML = 'No images found'; // Show message if no images
+                }
+            })
+            .catch(error => {
+                console.error('Error searching images:', error);
+                resultsContainer.innerHTML = 'Error loading images';
+            });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Check if the cookie name matches the name parameter
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        // Retrieve and decode the cookie value
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function handleFiles(files) {
+            const fileArray = Array.from(files);
+            totalImages += fileArray.length;  // Count total images
+            const preview = document.getElementById('image-preview');
+            preview.innerHTML = '';  // Clear previous contents
+
+            fileArray.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const imageContainer = document.createElement('div');
+                    const img = document.createElement('img');
+                    img.src = event.target.result;
+                    img.style.maxWidth = '100%';
+
+                    const selectList = document.createElement('select');
+                    selectList.innerHTML = `
+                        <option value="Pending">Select Class</option>
+                        <option value="Airplane">Airplane</option>
+                        <option value="Cat">Cat</option>
+                        <option value="Automobile">Automobile</option>
+                        <option value="Bird">Bird</option>
+                        <option value="Deer">Deer</option>
+                        <option value="Dog">Dog</option>
+                        <option value="Frog">Frog</option>
+                        <option value="Horse">Horse</option>
+                        <option value="Ship">Ship</option>
+                        <option value="Truck">Truck</option>
+                    `;
+                    selectList.onchange = () => {
+                        if (selectList.value !== "Pending") {
+                            saveAnnotation(img.src, selectList.value);
+                        }
+                    };
+
+                    imageContainer.appendChild(img);
+                    imageContainer.appendChild(selectList);
+                    preview.appendChild(imageContainer);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // This is basically taking care of the drop down section for uploading of the image
+        const dropArea = document.getElementById('drop-area');
+        const fileElem = document.getElementById('fileElem');
+
+        dropArea.addEventListener('click', function() {
+            fileElem.click();
+        });
+
+        dropArea.addEventListener('dragover', (event) => {
+            event.preventDefault(); // Prevent default behavior (Prevent file from being opened)
+            dropArea.classList.add('drag-over');
+        });
+
+        dropArea.addEventListener('dragleave', (event) => {
+            dropArea.classList.remove('drag-over');
+        });
+
+        dropArea.addEventListener('drop', (event) => {
+            event.preventDefault();
+            const files = event.dataTransfer.files;
+            handleFiles(files);
+            // Hide or disable the file input
+            fileElem.style.display = 'none'; // or fileElem.disabled = true;
+        });
+
+
+        function saveAnnotation(imageSrc, className) {
+            console.log("saveAnnotation function is being called.");
+            const data = {
+                image: imageSrc,
+                class_name: className
+            };
+            const csrftoken = getCookie('csrftoken');
+            fetch('/api/images/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Network response was not ok.');
+                }
+            })
+            .then(data => {
+                console.log('Success:', data);
+                annotatedImages++;
+                if (annotatedImages === totalImages) {
+                    alert('All annotations saved successfully!');
+                    resetUploadArea();
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Function to show or enable the file input when needed
+        function showFileInput() {
+            fileElem.style.display = 'block'; // or fileElem.disabled = false;
+        }
+
+        function getCurrentClassName() {
+            const selectElement = document.getElementById('class-names');
+            return selectElement.value;  // This will give you the currently selected class name
+        }
+
+        function resetUploadArea() {
+            const preview = document.getElementById('image-preview');
+            preview.innerHTML = '';
+            document.getElementById('fileElem').value = '';
+            totalImages = 0;
+            annotatedImages = 0;
+        }
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const resultsContainer = document.getElementById('search-results');
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            document.body.appendChild(overlay);
+
+            resultsContainer.addEventListener('click', function(event) {
+                if (event.target.class_name === 'IMG') {
+                    console.log('Image clicked:', event.target);
+                    const imgSrc = event.target.src;
+                    const imgId = event.target.getAttribute('id'); // Ensure each image has a 'data-id' attribute
+                    if (imgId) {
+                        fetchClassAndDisplayOverlay(imgSrc, imgId);
+                    } else {
+                        console.error('No data-id attribute found on image element');
+                    }
+                }
+            });
+
+            function fetchClassAndDisplayOverlay(imgSrc, imgId) {
+                fetch(`/api/images/${imgId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Success:', data);
+                    const currentClassName = data.class_name;
+                    const newClassName = prompt("Enter new class name:", currentClassName);
+                    if (newClassName !== null) {
+                        saveClassName(imgId, newClassName);
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            }
+
+            function saveClassName(imageId, newClassName) {
+                const data = {
+                    class_name: newClassName
+                };
+
+                fetch(`/api/images/${imageId}/`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Success:', data);
+                    // Update UI to reflect the changes if needed
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            }
+        });
+
+
+    </script>
+</body>
+</html>
